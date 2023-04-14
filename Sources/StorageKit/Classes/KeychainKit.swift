@@ -31,8 +31,8 @@ extension KeychainKit: IKeychainKit {
         manager.delegate = delegate
     }
 
-    public var locked: Bool {
-        manager.locked
+    public var passcodeLockState: PasscodeLockState {
+        manager.state
     }
 
     public func handleLaunch() {
