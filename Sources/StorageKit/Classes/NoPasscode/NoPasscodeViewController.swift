@@ -6,6 +6,7 @@ import ComponentKit
 public class NoPasscodeViewController: ThemeViewController {
     public enum Mode {
         case noPasscode
+        case cannotCheckPasscode
         case jailbreak
     }
 
@@ -83,6 +84,12 @@ public class NoPasscodeViewController: ThemeViewController {
             understandButton.addTarget(self, action: #selector(onUnderstand), for: .touchUpInside)
         case .noPasscode:
             infoLabel.text = "no_passcode.info_text".localized
+
+            containerView.snp.makeConstraints { maker in
+                maker.bottom.equalToSuperview()
+            }
+        case .cannotCheckPasscode:
+            infoLabel.text = "cannot_check_passcode.info_text".localized
 
             containerView.snp.makeConstraints { maker in
                 maker.bottom.equalToSuperview()

@@ -3,12 +3,8 @@ import LanguageKit
 
 class StorageKit {
 
-    static var bundle: Bundle? {
-        Bundle(for: StorageKit.self).url(forResource: "StorageKit", withExtension: "bundle").flatMap { Bundle(url: $0) }
-    }
-
     static func image(named: String) -> UIImage? {
-        UIImage(named: named, in: bundle, compatibleWith: nil)
+        UIImage(named: named, in: Bundle.module, compatibleWith: nil)
     }
 
 }
@@ -16,13 +12,19 @@ class StorageKit {
 extension String {
 
     var localized: String {
-        LanguageManager.shared.localize(string: self, bundle: StorageKit.bundle)
+        LanguageManager.shared.localize(string: self, bundle: Bundle.module)
     }
 
     func localized(_ arguments: CVarArg...) -> String {
-        LanguageManager.shared.localize(string: self, bundle: StorageKit.bundle, arguments: arguments)
+        LanguageManager.shared.localize(string: self, bundle: Bundle.module, arguments: arguments)
     }
 
+}
+
+public enum PasscodeLockState {
+    case passcodeSet
+    case passcodeNotSet
+    case unknown
 }
 
 public class LocalStorage {
@@ -50,14 +52,15 @@ public protocol ISecureStorage {
 
 public protocol IKeychainKit {
     var secureStorage: ISecureStorage { get }
-    var locked: Bool { get }
+    var passcodeLockState: PasscodeLockState { get }
     func set(delegate: IKeychainKitDelegate?)
     func handleLaunch()
     func handleForeground()
 }
 
 public protocol IKeychainKitDelegate: AnyObject {
-    func onInitialLock()
-    func onLock()
-    func onUnlock()
+    func onSecureStorageInvalidation()
+    func onPasscodeSet()
+    func onPasscodeNotSet()
+    func onCannotCheckPasscode()
 }

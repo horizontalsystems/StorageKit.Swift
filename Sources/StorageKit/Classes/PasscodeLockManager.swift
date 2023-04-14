@@ -3,48 +3,52 @@ import LocalAuthentication
 class PasscodeLockManager {
     weak var delegate: IKeychainKitDelegate?
 
-    private(set) var locked: Bool = false
+    private(set) var state: PasscodeLockState = .passcodeSet
 
     func handleLaunch() {
-        if !passcodeSet {
-            lock()
+        state = resolveState()
+
+        switch state {
+        case .passcodeNotSet: delegate?.onSecureStorageInvalidation()
+        default: ()
         }
     }
 
     func handleForeground() {
-        if passcodeSet {
-            unlockIfRequired()
-        } else {
-            lockIfRequired()
-        }
-    }
+        let oldState = state
 
-    private func lockIfRequired() {
-        guard !locked else {
+        state = resolveState()
+
+        guard state != oldState else {
             return
         }
 
-        lock()
-        delegate?.onLock()
+        switch state {
+        case .passcodeSet:
+            delegate?.onPasscodeSet()
+        case .passcodeNotSet:
+            delegate?.onPasscodeNotSet()
+            delegate?.onSecureStorageInvalidation()
+        case .unknown:
+            delegate?.onCannotCheckPasscode()
+        }
     }
 
-    private func unlockIfRequired() {
-        guard locked else {
-            return
+    private func resolveState() -> PasscodeLockState {
+        var error: NSError?
+
+        if LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+            return .passcodeSet
         }
 
-        locked = false
-        delegate?.onUnlock()
-    }
+        if let error = error as? LAError {
+            switch error.code {
+            case LAError.passcodeNotSet: return .passcodeNotSet
+            default: ()
+            }
+        }
 
-    private func lock() {
-        locked = true
-
-        delegate?.onInitialLock()
-    }
-
-    private var passcodeSet: Bool {
-        LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
+        return .unknown
     }
 
 }
